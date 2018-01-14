@@ -1,0 +1,91 @@
+---
+- fail:
+    msg: "No search path for package files is defined"
+  when: mirror_search_path is not defined
+
+- fail:
+    msg: "No mirror name is defined"
+  when: mirror_name is not defined
+
+- fail:
+    msg: "No PGP public key is defined"
+  when: mirror_pgp_pubkey is not defined
+
+- fail:
+    msg: "No PGP private key is defined"
+  when: mirror_pgp_privkey is not defined
+
+- name: Upload PGP private key
+  copy:
+      content: "{{ mirror_pgp_privkey }}"
+      dest: /root/mirror-pgp-key.key
+      owner: root
+      group: root
+      mode: 0600
+
+- name: Upload PGP public key
+  copy:
+      content: "{{ mirror_pgp_pubkey }}"
+      dest: /root/mirror-pgp-key.pub
+      owner: root
+      group: root
+      mode: 0600
+  register: pgpkey
+
+- name: Import pgp keys
+  shell: "gpg --import {{ item }}"
+  with_items:
+      - /root/mirror-pgp-key.pub
+      - /root/mirror-pgp-key.key
+  when: pgpkey.changed == true
+
+- name: Creating mirror base path
+  file:
+      path: "{{ mirror_basepath }}"
+      state: directory
+      owner: root
+      group: root
+      mode: 0740
+
+- name: Search every file in the search path
+  find:
+      paths: "{{ mirror_search_path }}"
+      pattern: "*.pkg.tar.xz"
+  register: searchpathcontent
+  delegate_to: 127.0.0.1
+  become: false
+
+- name: Upload every file in the search path
+  copy:
+      src: "{{ item.path }}"
+      dest: "{{ mirror_basepath }}"
+      owner: root
+      group: root
+  with_items: "{{ searchpathcontent.files }}"
+  notify:
+      - Recreate package db
+
+- name: Sign every package
+  shell: "chdir={{ mirror_basepath }} gpg --yes --output {{ item.path | basename }}.sig --detach-sig {{ item.path | basename }}"
+  with_items: "{{ searchpathcontent.files }}"
+
+- name: Install darkhttpd
+  pacman:
+      name: darkhttpd
+      state: present
+
+- name: Uploading systemd unit file
+  template:
+      src: arch-mirror.service.j2
+      dest: /etc/systemd/system/arch-mirror.service
+      owner: root
+      group: root
+      mode: 0760
+
+- name: Start arch-mirror.service
+  systemd:
+      name: arch-mirror.service
+      state: started
+      enabled: true
+      masked: false
+      daemon_reload: true

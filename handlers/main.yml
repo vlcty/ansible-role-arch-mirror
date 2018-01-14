@@ -1,0 +1,3 @@
+---
+- name: Recreate package db
+  shell: "chdir={{ mirror_basepath }} repo-add -R -s {{ mirror_basepath }}/{{ mirror_name }}.db.tar.gz {{ mirror_basepath }}/*.pkg.tar.xz"

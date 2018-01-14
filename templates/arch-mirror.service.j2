@@ -1,0 +1,14 @@
+#
+# Managed by ansible
+# Role: arch-mirror
+#
+[Unit]
+Description=Arch Mirror using darkhttpd
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/darkhttpd {{ mirror_basepath }} --chroot
+
+[Install]
+WantedBy=multi-user.target
