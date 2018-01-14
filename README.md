@@ -2,9 +2,11 @@
 
 This anisble playbook creates an unoffical arch mirror for your own packages.
 
+**This whole thing is still work in progress**
+
 ## Requirements
 
-You need an arch server somewhere to host your packages and of course your own packages. You also need a PGP key for your mirror. Packages and the database are signed with this key.
+You need an arch server somewhere to host your packages and of course your own packages. You also need a PGP key for your mirror. Packages and the database are signed with that key.
 
 You can find the necessary steps for the key generation under "Creating a GPG key".
 
@@ -15,29 +17,29 @@ The following variables exist:
 | Variable | Default value | Explanation |
 |----------|---------------|-------------|
 | mirror_basepath | /archmirror | Where the mirror files are kept |
-| mirror_search_path | - | Where the playbook looks locally for packages to upload |
+| mirror_search_path | - | Where the playbook searches locally for packages to upload |
 | mirror_name | - | The name of the mirror |
 | mirror_pgp_pubkey | - | The PGP public key |
 | mirror_pgp_privkey | - | The PGP private key |
 
-Every variable is mandatory.
+Every variable is mandatory and has to be set.
 
 ## How it works
 
-The playbook creates the directory defined under `mirror_basepath`. Afterwards every package which are found locally under `mirror_search_path` is uploaded to `mirror_basepath`. Afterwards every package is digitally signed with the PGP key and the repo metafile is created. The mirror starts then a darkhttpd server on that location, so every client can download the packages.
+The playbook creates the directory defined under `mirror_basepath` on the server. Afterwards every package which is found locally under `mirror_search_path` is uploaded to the server under `mirror_basepath`.  Afterwards every package is digitally signed with the PGP key and the repo metafile is created. A darkhttpd server is started to be reachable for every client over http. There is no need for https here, because every file's PGP signature will be verified.
 
-On the client side you have to add the repository. Open the file under /etc/pacman.conf and append the following snippet:
+On the client side you have to add the repository. Open the file `/etc/pacman.conf` and append the following snippet:
 
 ```
 [myrepo]
 Server = http://myrepo.example.com
 ```
 
-Replace `myrepo` with the value of `mirror_name` and replace the server address.
+Replace `myrepo` with the value of `mirror_name` and replace the server address. This step should of course also be ansibled but is not part of this role.
 
 ## Creating a GPG key
 
-All packages should be signed with an PGP key. This key should be always the same and is therefore not automatically created (and I was too lazy to do that). You have to manually create a one (or us an existing key if you want). This key will then be distributed with this role.
+All packages should be signed with an PGP key. This key should be always the same and is therefore not automatically created (and I was too lazy to do that). You have to manually create one (or use an existing key if you want). This key will then be distributed with this role.
 
 Step by step creating the key:
 
@@ -45,12 +47,14 @@ Step by step creating the key:
 
 Command: `gpg --full-gen-key --expert`
 
-You will be asked what key should be generated. Select the number which says `ECC (sign only)`. Afterwards you will be asked which curve you want to use. Select the number which says `Curve 25519`.
-Enter the expiry date you want to use. Enter your desired name and comment.
+You will be asked what key should be generated. I chose to use an ECC key, because it's 2018 and we should slowly move away from RSA.  
+Select the number which says `ECC (sign only)`. Afterwards you will be asked which curve you want to use. Select the number which says `Curve 25519`.
+Enter the expiry date you want to use. **Please use an expiry date!**  
+I've set mine to five years. Afterwards enter your desired name and comment.
 
 When asked for a password enter an empty one and confirm that you know what you are doing. This playbook can only import unencrypted private keys.
 
-Full transscript:
+Full transscript of a key creation:
 ```
 [root@archlinux ~]# gpg2 --expert --full-gen-key
 gpg (GnuPG) 2.2.3; Copyright (C) 2017 Free Software Foundation, Inc.
@@ -119,7 +123,7 @@ The key id in this example is `50E1EF4F007CAEC146AC098754DAD922CD39505C`. You no
 
 Export the public key:
 ```
-gpg --armour --export 50E1EF4F007CAEC146AC098754DAD922CD39505C
+[root@archlinux ~]# gpg --armour --export 50E1EF4F007CAEC146AC098754DAD922CD39505C
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
 hereisyourkeyblablubbfucktrump
@@ -128,14 +132,14 @@ hereisyourkeyblablubbfucktrump
 
 Export the private key:
 ```
-gpg --armour --export-secret-keys 50E1EF4F007CAEC146AC098754DAD922CD39505C
+[root@archlinux ~]# gpg --armour --export-secret-keys 50E1EF4F007CAEC146AC098754DAD922CD39505C
 -----BEGIN PGP PRIVATE KEY BLOCK-----
 
 hereisyourkeyblablubbfucktrumpagain
 -----END PGP PRIVATE KEY BLOCK-----
 ```
 
-Pack the two guys together into a host_vars file for your mirror. Example:
+Save the two keys into a host_vars file for your mirror. Example:
 
 ```
 ---
@@ -151,7 +155,7 @@ mirror_pgp_privkey: |
 
 ```
 
-Don't forget to encrypt the host_vars file with ansible-vault.
+Don't forget to encrypt the host_vars file with ansible-vault!
 
 ### 3. Delete the keys from your keyring
 
