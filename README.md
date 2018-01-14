@@ -184,6 +184,8 @@ Hint: The public key is stored in the variable `mirror_pgp_key`.
   when: pgpkey.changed == true
 
 - name: Creating ownertrust
+  # An 'ownertrust' file is created. Basically every line contains a fingerprint
+  # and the desired trustlevel. 6 is ultimate
   copy:
       content: "{{ pgpfingerprint.stdout }}:6:\n"
       dest: /tmp/ownertrust
