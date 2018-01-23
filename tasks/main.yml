@@ -80,7 +80,7 @@
   pacman:
       name: darkhttpd
       state: present
-  mirror_use_darkhttp: true
+  when: mirror_use_darkhttp == true
 
 - name: Uploading systemd unit file
   template:
@@ -89,7 +89,7 @@
       owner: root
       group: root
       mode: 0760
-  mirror_use_darkhttp: true
+  when: mirror_use_darkhttp == true
 
 - name: Start arch-mirror.service
   systemd:
@@ -98,4 +98,4 @@
       enabled: true
       masked: false
       daemon_reload: true
-  mirror_use_darkhttp: true
+  when: mirror_use_darkhttp == true
