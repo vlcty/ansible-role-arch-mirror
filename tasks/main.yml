@@ -43,8 +43,8 @@
   file:
       path: "{{ mirror_basepath }}"
       state: directory
-      owner: root
-      group: root
+      owner: "{{ mirror_user }}"
+      group: "{{ mirror_group }}"
       mode: 0740
 
 - name: Search every file in the search path
@@ -59,8 +59,8 @@
   copy:
       src: "{{ item.path }}"
       dest: "{{ mirror_basepath }}"
-      owner: root
-      group: root
+      owner: "{{ mirror_user }}"
+      group: "{{ mirror_group }}"
   with_items: "{{ searchpathcontent.files }}"
   notify:
       - Recreate package db
@@ -73,8 +73,8 @@
   copy:
       content: "{{ mirror_pgp_pubkey }}"
       dest: "{{ mirror_basepath }}/{{ mirror_name }}.pub"
-      owner: root
-      group: root
+      owner: "{{ mirror_user }}"
+      group: "{{ mirror_group }}"
 
 - name: Install darkhttpd
   pacman:

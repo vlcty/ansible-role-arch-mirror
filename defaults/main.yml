@@ -1,3 +1,5 @@
 ---
 mirror_basepath: /archmirror
 mirror_use_darkhttp: true
+mirror_user: root
+mirror_group: root
