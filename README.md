@@ -21,12 +21,13 @@ The following variables exist:
 | mirror_name | - | The name of the mirror |
 | mirror_pgp_pubkey | - | The PGP public key |
 | mirror_pgp_privkey | - | The PGP private key |
+| mirror_use_darkhttp | true | Use darkhttpd as wenserver |
 
 Every variable is mandatory and has to be set.
 
 ## How it works
 
-The playbook creates the directory defined under `mirror_basepath` on the server. Afterwards every package which is found locally under `mirror_search_path` is uploaded to the server under `mirror_basepath`.  Afterwards every package is digitally signed with the PGP key and the repo metafile is created. A darkhttpd server is started to be reachable for every client over http. There is no need for https here, because every file's PGP signature will be verified.
+The playbook creates the directory defined under `mirror_basepath` on the server. Afterwards every package which is found locally under `mirror_search_path` is uploaded to the server under `mirror_basepath`.  Afterwards every package is digitally signed with the PGP key and the repo metafile is created. A darkhttpd server is started to be reachable for every client over http. Set `mirror_use_darkhttp` to `false` if you don't want to use darkhttpd. There is no need for https here, because every file's PGP signature will be verified.
 
 On the client side you have to add the repository. Open the file `/etc/pacman.conf` and append the following snippet:
 

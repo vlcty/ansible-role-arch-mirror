@@ -1,2 +1,3 @@
 ---
 mirror_basepath: /archmirror
+mirror_use_darkhttp: true
