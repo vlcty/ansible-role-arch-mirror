@@ -69,6 +69,13 @@
   shell: "chdir={{ mirror_basepath }} gpg --yes --output {{ item.path | basename }}.sig --detach-sig {{ item.path | basename }}"
   with_items: "{{ searchpathcontent.files }}"
 
+- name: Write PGP public key into file
+  copy:
+      content: "{{ mirror_pgp_pubkey }}"
+      dest: "{{ mirror_basepath }}/{{ mirror_name }}.pub"
+      owner: root
+      group: root
+
 - name: Install darkhttpd
   pacman:
       name: darkhttpd
